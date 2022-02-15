@@ -32,7 +32,7 @@ def get_minute_data(ticker, interval, lookback):
       return dados
 
 def dadoscandle():
-    df = get_minute_data('ATOMUSDT','1d', '10 days')
+    df = get_minute_data('ATOMUSDT','1h', '10 hours')
 
     ind = ta.volatility.keltner_channel_hband_indicator(high = df['High'],low = df['Low'], close = df['Close'])
     donchianlow= ta.volatility.donchian_channel_lband(high = df['High'],low = df['Low'], close = df['Close'],window = 3)
@@ -44,14 +44,14 @@ def dadoscandle():
     return final
 
 def getmin():
-   df = get_minute_data('ATOMUSDT','1d', '10 days')
+   df = get_minute_data('ATOMUSDT','1h', '10 hours')
    donchianlow= ta.volatility.donchian_channel_lband(high = df['High'],low = df['Low'], close = df['Close'],window = 3)
    donchianlow.columns = ['Time','Khband']
    return donchianlow[-1]
 
 
 def getmax():
-  df = get_minute_data('ATOMUSDT','1d', '10 days')
+  df = get_minute_data('ATOMUSDT','1h', '10 hours')
   donchianhigh = ta.volatility.donchian_channel_hband(high = df['High'],low = df['Low'], close = df['Close'],window = 3)
   donchianhigh.columns = ['Time','Khband']
   return donchianhigh[-1]
