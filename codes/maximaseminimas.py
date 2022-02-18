@@ -96,7 +96,7 @@ def maxmin():
               getmin()
               time.sleep(60)
               getmax()
-              time.sleep(60)
+              time.sleep(120)
               #caso onde a ordem é preenchida
               if currentOrder['status']=='FILLED':
                   print("Bought: {} at {}".format(qty_compra,getmininicio))
@@ -106,16 +106,19 @@ def maxmin():
 
                   while open_position:
                     #coloca ordem na maxima
-                    contador = 0 
 
+                    #stop no tempo
+                    contador = 0 
+                    print(contador)
                     if contador  >= 5:
                       print('stopado por tempo')
                       market_order = client.create_order(symbol='ATOMUSDT',
                                       side='SELL',
                                       type='MARKET',
                                       quantity = qty_compra)
-
+                  #colocando ordem de compra
                     maxinicio = getmax()
+                    time.sleep(10)
                     sell_limit = client.create_order(symbol='ATOMUSDT', side='SELL', type='LIMIT', timeInForce='GTC', quantity=qty_compra , price= maxinicio)
                     print('Sell order placed at {}\n'.format(maxinicio))
                     orderIdComprado = sell_limit["orderId"]
