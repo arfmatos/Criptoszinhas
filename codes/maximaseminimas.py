@@ -42,7 +42,7 @@ def dadoscandle():
     final = pd.merge(final, donchianhigh, how='left', on='Time')
     qty_compra = round(58/final['dclband'][-1],4)
     return final
-
+ 
 def getmin():
    df = get_minute_data('ATOMUSDT','1h', '10 hours')
    donchianlow= ta.volatility.donchian_channel_lband(high = df['High'],low = df['Low'], close = df['Close'],window = 3)
@@ -54,102 +54,112 @@ def getmax():
   df = get_minute_data('ATOMUSDT','1h', '10 hours')
   donchianhigh = ta.volatility.donchian_channel_hband(high = df['High'],low = df['Low'], close = df['Close'],window = 3)
   donchianhigh.columns = ['Time','Khband']
+  
   return donchianhigh[-1]
+
+
+def keltner():
+  df = get_minute_data('ATOMUSDT','1h', '30 hours')
+  ATR = ta.volatility.average_true_range(high = df['High'],low = df['Low'], close = df['Close'],window = 10)
+  EMA = ta.trend.ema_indicator(df['Close'], 20)
+  keltnerhigh = EMA[-1] + (ATR[-1]*0.38)
+  keltnerlow = EMA[-1] - (ATR[-1]*0.38)
+  if df['Close'][-1] > keltnerlow and df['Close'][-1] > keltnerhigh:
+    return
+  else:
+    print('preços abaixo das bandas de kelner ,aguardando 60s')
+    time.sleep(60)
 
 
 def maxmin():
     print(getmin())
-
-
     getmininicio = getmin()
     qty_compra = round(80/getmin(),2)
     print(qty_compra)
 
-
-
-
     #estrategia
     #ordem de compra no donchianlow
-    open_position = False
-    if open_position == False:
-      try:
-        buy_limit = client.create_order(symbol='ATOMUSDT', side='BUY', type='LIMIT', timeInForce='GTC', quantity=qty_compra , price= getmininicio)
-       #buy_order = client.create_test_order(symbol='ATOMUSDT', side='BUY', type='LIMIT', quantity= qty_compra, price = final['dclband'][-1], timeInForce='GTC')
-        print(buy_limit)
+    if keltner():
+      open_position = False
+      if open_position == False:
+        try:
+          buy_limit = client.create_order(symbol='ATOMUSDT', side='BUY', type='LIMIT', timeInForce='GTC', quantity=qty_compra , price= getmininicio)
+        #buy_order = client.create_test_order(symbol='ATOMUSDT', side='BUY', type='LIMIT', quantity= qty_compra, price = final['dclband'][-1], timeInForce='GTC')
+          print(buy_limit)
 
-        # #ORdem que estava no stack  / order = client.order_limit_sell(symbol=pair,quantity=quantity,price=sellPrice)
-        orderId = buy_limit["orderId"]
-        print('Buy order placed at {}\n'.format(getmininicio))
-        key = True
-        while key:
-            currentOrder = client.get_order(symbol='ATOMUSDT',orderId=orderId)
-            getmin()
-            time.sleep(60)
-            getmax()
-            time.sleep(60)
-            #caso onde a ordem é preenchida
-            if currentOrder['status']=='FILLED':
-                print("Bought: {} at {}".format(qty_compra,getmininicio))
+          # #ORdem que estava no stack  / order = client.order_limit_sell(symbol=pair,quantity=quantity,price=sellPrice)
+          orderId = buy_limit["orderId"]
+          print('Buy order placed at {}\n'.format(getmininicio))
+          key = True
+          while key:
+              currentOrder = client.get_order(symbol='ATOMUSDT',orderId=orderId)
+              getmin()
+              time.sleep(60)
+              getmax()
+              time.sleep(60)
+              #caso onde a ordem é preenchida
+              if currentOrder['status']=='FILLED':
+                  print("Bought: {} at {}".format(qty_compra,getmininicio))
+                  time.sleep(20)
+                  open_position = True 
+                  #comprado
+
+                  while open_position:
+                    #coloca ordem na maxima
+                    contador = 0 
+
+                    if contador  >= 5:
+                      print('stopado por tempo')
+                      market_order = client.create_order(symbol='ATOMUSDT',
+                                      side='SELL',
+                                      type='MARKET',
+                                      quantity = qty_compra)
+
+                    maxinicio = getmax()
+                    sell_limit = client.create_order(symbol='ATOMUSDT', side='SELL', type='LIMIT', timeInForce='GTC', quantity=qty_compra , price= maxinicio)
+                    print('Sell order placed at {}\n'.format(maxinicio))
+                    orderIdComprado = sell_limit["orderId"]
+                    ordem_setada = True
+                    while ordem_setada:
+
+                        #caso onde a ordem de venda é preenchida
+                        currentOrderComprado = client.get_order(symbol='ATOMUSDT',orderId=orderIdComprado)
+                        if currentOrderComprado['status'] == 'FILLED':
+                          print('Venda feita: {} em {}'.format(qty_compra,sell_limit['price']))
+                          open_position = False
+                          key = False
+                          break
+
+                        #caso onde a ordem de venda tem que se atualizar
+                        if getmax() < maxinicio:
+                          time.sleep(20)
+                          cancelvenda = client.cancel_order(symbol='ATOMUSDT', orderId=sell_limit['orderId'])
+                        
+                          print(cancelvenda)
+                          print(f'Ordem cancelada , preço de saida estava em {maxinicio} e maxima atualizou para {getmax()}')
+                          #caso nao funcione, tentar colocar nova ordem dentro desse if e manter o loop
+                          contador +=1
+                          open_position = True
+                          ordem_setada = False
+                        
+              #caso onde o preço minimo atualiza
+              if getmin() > getmininicio:
                 time.sleep(20)
-                open_position = True 
-                #comprado
-
-                while open_position:
-                  #coloca ordem na maxima
-                  contador = 0 
-
-                  if contador  >= 5:
-                    print('stopado por tempo')
-                    market_order = client.create_order(symbol='ATOMUSDT',
-                                    side='SELL',
-                                    type='MARKET',
-                                    quantity = qty_compra)
-
-                  maxinicio = getmax()
-                  sell_limit = client.create_order(symbol='ATOMUSDT', side='SELL', type='LIMIT', timeInForce='GTC', quantity=qty_compra , price= maxinicio)
-                  print('Sell order placed at {}\n'.format(maxinicio))
-                  orderIdComprado = sell_limit["orderId"]
-
-                  while True:
-
-                      #caso onde a ordem de venda é preenchida
-                      currentOrderComprado = client.get_order(symbol='ATOMUSDT',orderId=orderIdComprado)
-                      if currentOrderComprado['status'] == 'FILLED':
-                        print('Venda feita: {} em {}'.format(qty_compra,sell_limit['price']))
-                        open_position = False
-                        key = False
-                        break
-
-                      #caso onde a ordem de venda tem que se atualizar
-                      if getmax() < maxinicio:
-                        time.sleep(20)
-                        cancelvenda = client.cancel_order(symbol='ATOMUSDT', orderId=sell_limit['orderId'])
-                      
-                        print(cancelvenda)
-                        print(f'Ordem cancelada , preço de saida estava em {maxinicio} e maxima atualizou para {getmax()}')
-                        #caso nao funcione, tentar colocar nova ordem dentro desse if e manter o loop
-                        contador +=1
-                        open_position = True
-                        break
-                       
-            #caso onde o preço minimo atualiza
-            if getmin() > getmininicio:
-              time.sleep(20)
-              cancel = client.cancel_order(symbol='ATOMUSDT', orderId=buy_limit['orderId'])
-              print(cancel)
-              print(f'Ordem cancelada , preço de entrada estava em {getmininicio} e minima atualizou para {getmin()}')
-              open_position = False
-              print(".")
-              break
-           
+                cancel = client.cancel_order(symbol='ATOMUSDT', orderId=buy_limit['orderId'])
+                print(cancel)
+                print(f'Ordem cancelada , preço de entrada estava em {getmininicio} e minima atualizou para {getmin()}')
+                open_position = False
+                print(".")
+                break
+            
 
 
-      except  BinanceAPIException as e:
+        except  BinanceAPIException as e:
+              # error handling goes here
+                print(e)
+        except BinanceOrderException as e:
             # error handling goes here
-              print(e)
-      except BinanceOrderException as e:
-          # error handling goes here
-              print(e)
+                print(e)
 
 while True:
     maxmin()
