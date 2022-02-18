@@ -96,7 +96,7 @@ def maxmin():
               getmin()
               time.sleep(60)
               getmax()
-              time.sleep(120)
+              time.sleep(10)
               #caso onde a ordem é preenchida
               if currentOrder['status']=='FILLED':
                   print("Bought: {} at {}".format(qty_compra,getmininicio))
