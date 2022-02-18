@@ -67,7 +67,7 @@ def keltner():
   if df['Close'][-1] > keltnerlow and df['Close'][-1] > keltnerhigh:
     return
   else:
-    print('preços abaixo das bandas de kelner ,aguardando 60s')
+    print('precos abaixo das bandas de keltner ,aguardando 60s')
     time.sleep(60)
 
 
