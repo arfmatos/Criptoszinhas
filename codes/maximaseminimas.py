@@ -56,7 +56,7 @@ def getmax():
   donchianhigh.columns = ['Time','Khband']
   
   return donchianhigh[-1]
-
+a
 
 def keltner():
   df = get_minute_data('ATOMUSDT','1h', '30 hours')
@@ -72,10 +72,9 @@ def keltner():
 
 
 def maxmin():
-    print(getmin())
     getmininicio = getmin()
     qty_compra = round(80/getmin(),2)
-    print(qty_compra)
+    
 
     #estrategia
     #ordem de compra no donchianlow

@@ -37,8 +37,6 @@ def keltner():
   EMA = ta.trend.ema_indicator(df['Close'], 20)
   keltnerhigh = EMA[-1] + (ATR[-1]*0.38)
   keltnerlow = EMA[-1] - (ATR[-1]*0.38)
-
-  if getmin()
   return keltnerlow,keltnerhigh
 
 
