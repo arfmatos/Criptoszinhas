@@ -56,7 +56,7 @@ def getmax():
   donchianhigh.columns = ['Time','Khband']
   
   return donchianhigh[-1]
-a
+
 
 def keltner():
   df = get_minute_data('ATOMUSDT','1h', '30 hours')
