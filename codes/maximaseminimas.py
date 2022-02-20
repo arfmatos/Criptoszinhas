@@ -43,46 +43,46 @@ def dadoscandle():
     qty_compra = round(58/final['dclband'][-1],4)
     return final
  
-def getmin():
-   df = get_minute_data('ATOMUSDT','1h', '10 hours')
-   donchianlow= ta.volatility.donchian_channel_lband(high = df['High'],low = df['Low'], close = df['Close'],window = 3)
+def getmin(ticker, timeframe , timeago):
+   df = get_minute_data(ticker,timeframe,timeago)
+   donchianlow= ta.volatility.donchian_channel_lband(high = df['High'],low = df['Low'], close = df['Close'],window = 5)
    donchianlow.columns = ['Time','Khband']
    return donchianlow[-1]
 
 
-def getmax():
-  df = get_minute_data('ATOMUSDT','1h', '10 hours')
-  donchianhigh = ta.volatility.donchian_channel_hband(high = df['High'],low = df['Low'], close = df['Close'],window = 3)
+def getmax(ticker,timeframe,timeago):
+  df = get_minute_data(ticker,timeframe,timeago)
+  donchianhigh = ta.volatility.donchian_channel_hband(high = df['High'],low = df['Low'], close = df['Close'],window = 4)
   donchianhigh.columns = ['Time','Khband']
   
   return donchianhigh[-1]
 
 
-def keltner():
-  df = get_minute_data('ATOMUSDT','1h', '30 hours')
+def keltner(ticker,timeframe,timeago):
+  df = get_minute_data(ticker ,timeframe, timeago)
   ATR = ta.volatility.average_true_range(high = df['High'],low = df['Low'], close = df['Close'],window = 10)
   EMA = ta.trend.ema_indicator(df['Close'], 20)
-  keltnerhigh = EMA[-1] + (ATR[-1]*0.38)
-  keltnerlow = EMA[-1] - (ATR[-1]*0.38)
+  keltnerhigh = EMA[-1] + (ATR[-1]*0.20)
+  keltnerlow = EMA[-1] - (ATR[-1]*0.20)
   if df['Close'][-1] > keltnerlow and df['Close'][-1] > keltnerhigh:
-    return
+    return True
   else:
     print('precos abaixo das bandas de keltner ,aguardando 60s')
     time.sleep(60)
 
 
-def maxmin():
-    getmininicio = getmin()
-    qty_compra = round(80/getmin(),2)
+def maxmin(ticker,timeframe,timeago):
+    getmininicio = getmin(ticker,timeframe,timeago)
+    qty_compra = round(80/getmin(ticker,timeframe,timeago),2)
     
 
     #estrategia
     #ordem de compra no donchianlow
-    if keltner():
+    if keltner(ticker,timeframe,timeago):
       open_position = False
       if open_position == False:
         try:
-          buy_limit = client.create_order(symbol='ATOMUSDT', side='BUY', type='LIMIT', timeInForce='GTC', quantity=qty_compra , price= getmininicio)
+          buy_limit = client.create_order(symbol= ticker, side='BUY', type='LIMIT', timeInForce='GTC', quantity=qty_compra , price= getmininicio)
         #buy_order = client.create_test_order(symbol='ATOMUSDT', side='BUY', type='LIMIT', quantity= qty_compra, price = final['dclband'][-1], timeInForce='GTC')
           print(buy_limit)
 
@@ -91,10 +91,10 @@ def maxmin():
           print('Buy order placed at {}\n'.format(getmininicio))
           key = True
           while key:
-              currentOrder = client.get_order(symbol='ATOMUSDT',orderId=orderId)
-              getmin()
+              currentOrder = client.get_order(symbol= ticker ,orderId=orderId)
+              getmin(ticker,timeframe,timeago)
               time.sleep(60)
-              getmax()
+              getmax(ticker,timeframe,timeago)
               time.sleep(10)
               #caso onde a ordem é preenchida
               if currentOrder['status']=='FILLED':
@@ -111,21 +111,22 @@ def maxmin():
                     print(contador)
                     if contador  >= 5:
                       print('stopado por tempo')
-                      market_order = client.create_order(symbol='ATOMUSDT',
+                      market_order = client.create_order(symbol= ticker,
                                       side='SELL',
                                       type='MARKET',
                                       quantity = qty_compra)
+                      print(f'stopado por tempo {market_order}')
                   #colocando ordem de compra
-                    maxinicio = getmax()
+                    maxinicio = getmax(ticker,timeframe,timeago)
                     time.sleep(10)
-                    sell_limit = client.create_order(symbol='ATOMUSDT', side='SELL', type='LIMIT', timeInForce='GTC', quantity=qty_compra , price= maxinicio)
+                    sell_limit = client.create_order(symbol= ticker, side='SELL', type='LIMIT', timeInForce='GTC', quantity=qty_compra , price= maxinicio)
                     print('Sell order placed at {}\n'.format(maxinicio))
                     orderIdComprado = sell_limit["orderId"]
                     ordem_setada = True
                     while ordem_setada:
 
                         #caso onde a ordem de venda é preenchida
-                        currentOrderComprado = client.get_order(symbol='ATOMUSDT',orderId=orderIdComprado)
+                        currentOrderComprado = client.get_order(symbol= ticker,orderId=orderIdComprado)
                         if currentOrderComprado['status'] == 'FILLED':
                           print('Venda feita: {} em {}'.format(qty_compra,sell_limit['price']))
                           open_position = False
@@ -133,23 +134,23 @@ def maxmin():
                           break
 
                         #caso onde a ordem de venda tem que se atualizar
-                        if getmax() < maxinicio:
+                        if getmax(ticker,timeframe,timeago) < maxinicio:
                           time.sleep(20)
-                          cancelvenda = client.cancel_order(symbol='ATOMUSDT', orderId=sell_limit['orderId'])
+                          cancelvenda = client.cancel_order(symbol= ticker, orderId=sell_limit['orderId'])
                         
                           print(cancelvenda)
-                          print(f'Ordem cancelada , preço de saida estava em {maxinicio} e maxima atualizou para {getmax()}')
+                          print(f'Ordem cancelada , preço de saida estava em {maxinicio} e maxima atualizou para {getmax(ticker,timeframe,timeago)}')
                           #caso nao funcione, tentar colocar nova ordem dentro desse if e manter o loop
                           contador +=1
                           open_position = True
                           ordem_setada = False
                         
               #caso onde o preço minimo atualiza
-              if getmin() > getmininicio:
+              if getmin(ticker,timeframe,timeago) > getmininicio:
                 time.sleep(20)
                 cancel = client.cancel_order(symbol='ATOMUSDT', orderId=buy_limit['orderId'])
                 print(cancel)
-                print(f'Ordem cancelada , preço de entrada estava em {getmininicio} e minima atualizou para {getmin()}')
+                print(f'Ordem cancelada , preço de entrada estava em {getmininicio} e minima atualizou para {getmin(ticker,timeframe,timeago)}')
                 open_position = False
                 print(".")
                 break
@@ -164,4 +165,4 @@ def maxmin():
                 print(e)
 
 while True:
-    maxmin()
+    maxmin('ATOMUSDT','1h','30 hours')
