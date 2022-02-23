@@ -73,7 +73,7 @@ def keltner(ticker,timeframe,timeago):
 
 def maxmin(ticker,timeframe,timeago):
     getmininicio = getmin(ticker,timeframe,timeago)
-    qty_compra = round(80/getmin(ticker,timeframe,timeago),2)
+    qty_compra = round(79/getmin(ticker,timeframe,timeago),2)
     
 
     #estrategia
