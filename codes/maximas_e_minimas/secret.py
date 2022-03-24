@@ -1,2 +1,0 @@
-secret1 = "N1rc9N8fYRn1Oyb9yoKIGwUIf3tUwVBxI5EyhkpC1blxeFG451qoCfMVNO0ES6Kl"
-secret2 = "DZXKpom2aQ0lL0r9r9vXufvDBsRXV5vkP1L9IxsbQ5wg9CMJLSzJzTMLltQ80Yfo"
