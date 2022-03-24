@@ -1,3 +1,5 @@
+
+#Code that calculates the keltner channels from any Crypto,just change the instances at function
 from binance import Client
 import pandas as pd
 import numpy as np
@@ -8,7 +10,7 @@ import matplotlib
 from binance.enums import *
 from binance.exceptions import BinanceAPIException, BinanceOrderException
 
-client = Client("N1rc9N8fYRn1Oyb9yoKIGwUIf3tUwVBxI5EyhkpC1blxeFG451qoCfMVNO0ES6Kl", "DZXKpom2aQ0lL0r9r9vXufvDBsRXV5vkP1L9IxsbQ5wg9CMJLSzJzTMLltQ80Yfo")
+client = Client("secretkeysfrombinanceAPI")
 
 def get_minute_data(ticker, interval, lookback):
       dados =  pd.DataFrame(client.get_historical_klines(ticker, interval , lookback +' ago UTC'))
