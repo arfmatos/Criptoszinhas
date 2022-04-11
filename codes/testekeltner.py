@@ -31,7 +31,7 @@ def dadoscandle():
     donchianhigh = ta.volatility.donchian_channel_hband(high = df['High'],low = df['Low'], close = df['Close'],window = 2)
     final = pd.merge(df, donchianlow,how = 'left', on = 'Time')
     final = pd.merge(final, donchianhigh, how='left', on='Time')
-    qty_compra = round(58/final['dclband'][-1],4)
+ 
     return final
 def keltner():
   df = get_minute_data('ATOMUSDT','1h', '30 hours')
